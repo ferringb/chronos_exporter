@@ -8,9 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/prometheus/common/log"
 )
 
 type Scraper interface {
+	Ping() error
 	Scrape() ([]byte, error)
 }
 
@@ -18,7 +21,7 @@ type scraper struct {
 	uri *url.URL
 }
 
-func (s *scraper) Scrape() ([]byte, error) {
+func (s *scraper) doRequest(uri string) (*http.Response, error) {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
@@ -30,8 +33,28 @@ func (s *scraper) Scrape() ([]byte, error) {
 			},
 		},
 	}
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/%v", s.uri, uri), nil)
+	return client.Do(req)
+}
 
-	response, err := client.Get(fmt.Sprintf("%v/metrics", s.uri))
+func (s *scraper) Ping() error {
+	response, err := s.doRequest("ping")
+	if err != nil {
+		log.Debugf("Problem connecting to Chronos: %v\n", err)
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		log.Debugf("Problem reading Chronos ping response: %s\n", response.Status)
+		return err
+	}
+
+	log.Debug("Connected to Chronos!")
+	return nil
+}
+
+func (s *scraper) Scrape() ([]byte, error) {
+	response, err := s.doRequest("metrics")
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,7 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
-	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -27,34 +24,6 @@ var (
 		"URI of Chronos")
 )
 
-func chronosConnect(uri *url.URL) error {
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			Dial: (&net.Dialer{
-				Timeout: 10 * time.Second,
-			}).Dial,
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	response, err := client.Get(fmt.Sprintf("%v/ping", uri))
-	if err != nil {
-		log.Debugf("Problem connecting to Chronos: %v\n", err)
-		return err
-	}
-
-	if response.StatusCode != 200 {
-		log.Debugf("Problem reading Chronos ping response: %s\n", response.Status)
-		return err
-	}
-
-	log.Debug("Connected to Chronos!")
-	return nil
-}
-
 func main() {
 	flag.Parse()
 	uri, err := url.Parse(*chronosUri)
@@ -62,9 +31,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	scraper_instance := &scraper{uri}
+
 	retryTimeout := time.Duration(10 * time.Second)
 	for {
-		err := chronosConnect(uri)
+		err := scraper_instance.Ping()
 		if err == nil {
 			break
 		}
@@ -74,7 +45,7 @@ func main() {
 		time.Sleep(retryTimeout)
 	}
 
-	exporter := NewExporter(&scraper{uri})
+	exporter := NewExporter(scraper_instance)
 	prometheus.MustRegister(exporter)
 
 	http.Handle(*metricsPath, prometheus.Handler())
