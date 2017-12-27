@@ -18,15 +18,16 @@ type Scraper interface {
 }
 
 type scraper struct {
-	uri *url.URL
+	uri     *url.URL
+	timeout time.Duration
 }
 
 func (s *scraper) doRequest(uri string) (*http.Response, error) {
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: s.timeout,
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
-				Timeout: 10 * time.Second,
+				Timeout: s.timeout,
 			}).Dial,
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,

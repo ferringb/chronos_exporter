@@ -22,6 +22,9 @@ var (
 	chronosUri = flag.String(
 		"chronos.uri", "http://chronos.mesos:4400",
 		"URI of Chronos")
+	chronosTimeout = flag.Duration(
+		"chronos.timeout", 10*time.Second,
+		"Timeout allowed for a chronos scrape")
 )
 
 func main() {
@@ -31,9 +34,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	scraper_instance := &scraper{uri}
+	scraper_instance := &scraper{uri, *chronosTimeout}
 
-	retryTimeout := time.Duration(10 * time.Second)
 	for {
 		err := scraper_instance.Ping()
 		if err == nil {
@@ -41,8 +43,8 @@ func main() {
 		}
 
 		log.Debugf("Problem connecting to Chronos: %v", err)
-		log.Infof("Couldn't connect to Chronos! Trying again in %v", retryTimeout)
-		time.Sleep(retryTimeout)
+		log.Infof("Couldn't connect to Chronos! Trying again in %v", chronosTimeout)
+		time.Sleep(*chronosTimeout)
 	}
 
 	exporter := NewExporter(scraper_instance)
