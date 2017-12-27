@@ -25,6 +25,9 @@ var (
 	chronosTimeout = flag.Duration(
 		"chronos.timeout", 10*time.Second,
 		"Timeout allowed for a chronos scrape")
+	chronosVerifyTLS = flag.Bool(
+		"chronos.verify-tls", true,
+		"Verify the chronos.uri TLS certificate.  Insecure if disabled.")
 )
 
 func main() {
@@ -34,7 +37,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	scraper_instance := &scraper{uri, *chronosTimeout}
+	scraper_instance := &scraper{
+		uri:        uri,
+		timeout:    *chronosTimeout,
+		verify_tls: *chronosVerifyTLS,
+	}
 
 	for {
 		err := scraper_instance.Ping()

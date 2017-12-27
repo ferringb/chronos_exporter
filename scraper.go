@@ -18,8 +18,9 @@ type Scraper interface {
 }
 
 type scraper struct {
-	uri     *url.URL
-	timeout time.Duration
+	uri        *url.URL
+	timeout    time.Duration
+	verify_tls bool
 }
 
 func (s *scraper) doRequest(uri string) (*http.Response, error) {
@@ -30,7 +31,7 @@ func (s *scraper) doRequest(uri string) (*http.Response, error) {
 				Timeout: s.timeout,
 			}).Dial,
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: !s.verify_tls,
 			},
 		},
 	}
