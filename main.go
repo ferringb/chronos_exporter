@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,6 +29,9 @@ var (
 	chronosVerifyTLS = flag.Bool(
 		"chronos.verify-tls", true,
 		"Verify the chronos.uri TLS certificate.  Insecure if disabled.")
+	chronosAuthBearerToken = flag.String(
+		"chronos.auth-bearer-token", "",
+		"Send an Authorization Bearer header to chronos.url if given.  It's more secure to set this via the environment variable CHRONOS_AUTH_BEARER_TOKEN")
 )
 
 func main() {
@@ -37,10 +41,21 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if *chronosAuthBearerToken == "" {
+		s, found := os.LookupEnv("CHRONOS_AUTH_BEARER_TOKEN")
+		if found {
+			log.Debugf("auth bearer was found in CHRONOS_AUTH_BEARER_TOKEN, using that")
+			chronosAuthBearerToken = &s
+		} else {
+			chronosAuthBearerToken = nil
+		}
+	}
+
 	scraper_instance := &scraper{
-		uri:        uri,
-		timeout:    *chronosTimeout,
-		verify_tls: *chronosVerifyTLS,
+		auth_bearer_token: chronosAuthBearerToken,
+		timeout:           *chronosTimeout,
+		uri:               uri,
+		verify_tls:        *chronosVerifyTLS,
 	}
 
 	for {

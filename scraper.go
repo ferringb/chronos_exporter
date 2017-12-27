@@ -18,9 +18,10 @@ type Scraper interface {
 }
 
 type scraper struct {
-	uri        *url.URL
-	timeout    time.Duration
-	verify_tls bool
+	auth_bearer_token *string
+	timeout           time.Duration
+	uri               *url.URL
+	verify_tls        bool
 }
 
 func (s *scraper) doRequest(uri string) (*http.Response, error) {
@@ -36,6 +37,9 @@ func (s *scraper) doRequest(uri string) (*http.Response, error) {
 		},
 	}
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/%v", s.uri, uri), nil)
+	if s.auth_bearer_token != nil {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *s.auth_bearer_token))
+	}
 	return client.Do(req)
 }
 
