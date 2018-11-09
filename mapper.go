@@ -10,9 +10,9 @@ import (
 
 var (
 	metric_symbol_repl_expr   = regexp.MustCompile(`[\.\$\-\(\)\s#]`)
-	// As of 2.5.0, the allowed regex for a job name is:
-	// ([\w\s\.#_-]+).
-	chronos_jobs_capture_expr = regexp.MustCompile(`^jobs\.run\.(\w+)\.([\w\s\.#_-]+)$`)
+	// As of 3.0, the allowed regex for a job name is:
+	// ([\w\._-]+).
+	chronos_jobs_capture_expr = regexp.MustCompile(`^jobs\.run\.(\w+)\.([\w\._-]+)$`)
 )
 
 type Mapper struct {
